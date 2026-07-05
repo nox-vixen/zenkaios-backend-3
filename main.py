@@ -1,19 +1,10 @@
 from fastapi import FastAPI
-from app.routes.home import router as home_router
+import moviebox_api.v3 as v3
 
-app = FastAPI(title="ZenkaiOS Backend")
-
-app.include_router(home_router)
-
+app = FastAPI()
 
 @app.get("/")
 async def root():
     return {
-        "name": "ZenkaiOS Backend",
-        "status": "running"
+        "exports": dir(v3)
     }
-
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
