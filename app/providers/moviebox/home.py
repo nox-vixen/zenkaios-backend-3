@@ -1,58 +1,56 @@
-from moviebox_api.v3 import Homepage, MovieBoxHttpClient
+from moviebox_api.v3.core import Homepage
+from moviebox_api.v3.http_client import MovieBoxHttpClient
 
 
 async def get_home():
     async with MovieBoxHttpClient() as client:
+        homepage = Homepage(client)
 
-        home = Homepage(client)
-        data = await home.get_content()
+        data = await homepage.get_content()
 
         hero = []
         sections = []
 
-        # Parse every homepage block
-        for key, block in data.items():
+        for block in data.get("items", []):
 
-            if not isinstance(block, dict):
-                continue
-
-            # Hero Banner
-            if block.get("type") == "BANNER":
-                banners = block.get("banner", {}).get("banners", [])
-
-                for banner in banners:
-                    subject = banner.get("subject", {})
+            banner = block.get("banner")
+            if banner:
+                for item in banner.get("banners", []):
+                    subject = item.get("subject") or {}
 
                     hero.append({
                         "id": subject.get("subjectId"),
                         "title": subject.get("title"),
-                        "image": banner.get("image", {}).get("url"),
-                        "cover": subject.get("cover", {}).get("url"),
+                        "image": item.get("image", {}).get("url"),
+                        "cover": (
+                            subject.get("cover", {}) or {}
+                        ).get("url"),
                         "year": subject.get("releaseDate"),
                         "type": subject.get("subjectType"),
                     })
 
-            # Horizontal sections
-            elif block.get("subjects"):
+            subjects = block.get("subjects") or []
 
+            if subjects:
                 items = []
 
-                for subject in block.get("subjects", []):
-
+                for subject in subjects:
                     items.append({
                         "id": subject.get("subjectId"),
                         "title": subject.get("title"),
-                        "image": subject.get("cover", {}).get("url"),
+                        "image": (
+                            subject.get("cover", {}) or {}
+                        ).get("url"),
                         "year": subject.get("releaseDate"),
                         "type": subject.get("subjectType"),
                     })
 
                 sections.append({
                     "title": block.get("title"),
-                    "items": items
+                    "items": items,
                 })
 
         return {
             "hero": hero,
-            "sections": sections
+            "sections": sections,
         }
